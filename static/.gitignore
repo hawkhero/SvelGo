@@ -1,0 +1,4 @@
+# Build output from `cd frontend && npm run build`
+# Do not commit — run `make build` to regenerate
+assets/
+.vite/

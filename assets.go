@@ -1,0 +1,66 @@
+package svelgo
+
+import (
+	"encoding/json"
+	"io/fs"
+	"log"
+	"net/http"
+	"os"
+)
+
+var devMode = os.Getenv("SVELGO_DEV") == "1"
+
+var (
+	resolvedScript string
+	resolvedCSS    string
+)
+
+type viteManifestEntry struct {
+	File    string   `json:"file"`
+	CSS     []string `json:"css"`
+	IsEntry bool     `json:"isEntry"`
+}
+
+// Setup initialises the asset resolver and registers HTTP handlers for
+// /ws and /assets/. Call this before registering your own routes.
+func Setup() {
+	if devMode {
+		resolvedScript = "http://localhost:5173/src/main.ts"
+		resolvedCSS = ""
+		log.Println("SvelGo: dev mode — Vite dev server expected at :5173")
+	} else {
+		// Parse the Vite manifest to find the hashed bundle filenames
+		manifestData, err := staticFS.ReadFile("static/.vite/manifest.json")
+		if err != nil {
+			log.Fatal("SvelGo: could not read static/.vite/manifest.json — run `cd frontend && npm run build` first")
+		}
+		var manifest map[string]viteManifestEntry
+		if err := json.Unmarshal(manifestData, &manifest); err != nil {
+			log.Fatal("SvelGo: could not parse manifest.json:", err)
+		}
+		for _, entry := range manifest {
+			if entry.IsEntry {
+				resolvedScript = "/" + entry.File
+				if len(entry.CSS) > 0 {
+					resolvedCSS = "/" + entry.CSS[0]
+				}
+				break
+			}
+		}
+		if resolvedScript == "" {
+			log.Fatal("SvelGo: no entry point found in Vite manifest")
+		}
+		log.Printf("SvelGo: serving embedded assets (script: %s)", resolvedScript)
+
+		// Serve embedded static assets
+		staticRoot, _ := fs.Sub(staticFS, "static")
+		http.Handle("/assets/", http.FileServer(http.FS(staticRoot)))
+	}
+
+	// WebSocket handler
+	http.HandleFunc("/ws", WSHandler)
+}
+
+func resolveAssets() (script, css string) {
+	return resolvedScript, resolvedCSS
+}
