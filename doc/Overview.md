@@ -1,4 +1,9 @@
-# SvelGo Architecture
+# SvelGo Role
+* Help Go developers build rich, interactive web UIs without writing JavaScript or managing a separate frontend codebase.
+* Aim for building enterprise web application, not for a web app for end users
+* provide a set of UI components that can be used to build internal tools, dashboards, admin panels, etc.
+
+# Architecture
 
 SvelGo is a Go-first UI framework. Developers declare pages and components in Go; the framework renders full HTML pages and keeps the browser in sync over a persistent WebSocket. There is **one server** — no separate Node process in production.
 
@@ -293,3 +298,57 @@ sequenceDiagram
         B->>B: Svelte reactivity → DOM re-render
     end
 ```
+
+---
+
+## Toolchain Explained (for beginners)
+
+### `index.html` vs `template.go`
+
+There are two HTML files in this project and they serve completely different purposes.
+
+**`frontend/index.html`** is a stub used only by the Vite dev server when you run `npm run dev` in isolation (i.e., without Go). It contains empty or hardcoded placeholder values for the globals (`__SVELGO_STATE__`, etc.) so the browser doesn't crash during frontend-only development. This file is **never sent to real users**.
+
+**`template.go`** is the real HTML shell. Go executes it on every HTTP request and injects live data:
+- `window.__SVELGO_PAGE_ID__` — a fresh UUID for this specific page load
+- `window.__SVELGO_STATE__` — the actual base64 protobuf blob encoding all component states
+- `window.__SVELGO_MANIFEST__` — the JSON array mapping component IDs to types and slots
+
+When you run `make dev` (which starts both Vite and Go together), every page you visit goes through `template.go`. `frontend/index.html` is only relevant if you run `npm run dev` alone.
+
+---
+
+### Generated code — `svelgo/gen/ui`
+
+`proto/ui.proto` is the **single source of truth** for all data types shared between Go and the browser. You define a message there and both sides automatically get the right code:
+
+```
+proto/ui.proto   (you edit this)
+       │
+       ├─ make proto (protoc)
+       │
+       ├─→ gen/ui/ui.pb.go           Go structs — import as uipb "svelgo/gen/ui"
+       └─→ frontend/src/ui_descriptor.json    JS decoder table for protobufjs
+```
+
+**Never edit generated files by hand.** Any change you make will be overwritten the next time `make proto` runs. Always edit `proto/ui.proto` and regenerate.
+
+The import alias `uipb` is just a short nickname meaning "UI protobuf" — you will see it in `cmd/app/main.go` as:
+
+```go
+import uipb "svelgo/gen/ui"
+```
+
+There is nothing special about the alias; it is just shorter than typing `ui` (which could clash with other packages named `ui`).
+
+---
+
+### What Vite does
+
+Vite is the build tool for the TypeScript and Svelte frontend code. It has two modes:
+
+**Dev mode (`npm run dev`)** — starts a hot-reloading server on port `:5173`. When you edit a `.svelte` or `.ts` file, Vite instantly pushes the change to the browser without a full reload. Go (running with `SVELGO_DEV=1`) proxies asset requests to this Vite server instead of serving the embedded bundle.
+
+**Build mode (`npm run build`)** — compiles everything to optimised, content-hashed JavaScript files and writes them to `../static/`. Content hashing means the filename changes whenever the file contents change (e.g. `main-a3f9c2.js`), which busts browser caches automatically.
+
+Vite also emits **`static/.vite/manifest.json`** — a lookup table that maps source file names to their hashed output names. Go reads this file at startup (in `assets.go`) to know which hashed filename to link in the HTML `<script>` tag. That is why `//go:embed all:static` uses the `all:` prefix: without it, Go silently skips hidden directories like `.vite/` and the manifest is missing.
