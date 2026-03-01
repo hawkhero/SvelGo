@@ -18,6 +18,9 @@ export function bootstrap() {
   // Decode the protobuf state blob and initialise per-component Svelte stores
   if (stateBlob) {
     const pageState = decodePageState(stateBlob) as any
+    if ((window as any).__SVELGO_DEBUG__) {
+      console.debug('[svelgo init] page state', pageState)
+    }
     for (const cs of (pageState.components ?? [])) {
       const decoded = decodeComponentState(cs.type, cs.stateBytes as Uint8Array)
       initComponentState(cs.id, decoded)

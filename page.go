@@ -78,6 +78,7 @@ func (p *Page) Render(w http.ResponseWriter, r *http.Request) {
 		Manifest:    template.JS(manifestJSON),
 		AssetScript: scriptPath,
 		AssetCSS:    cssPath,
+		Debug:       debugMode,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

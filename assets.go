@@ -9,6 +9,7 @@ import (
 )
 
 var devMode = os.Getenv("SVELGO_DEV") == "1"
+var debugMode = os.Getenv("SVELGO_DEBUG") == "1"
 
 var (
 	resolvedScript string
@@ -24,6 +25,9 @@ type viteManifestEntry struct {
 // Setup initialises the asset resolver and registers HTTP handlers for
 // /ws and /assets/. Call this before registering your own routes.
 func Setup() {
+	if debugMode {
+		log.Println("SvelGo: debug mode enabled")
+	}
 	if devMode {
 		resolvedScript = "http://localhost:5173/src/main.ts"
 		resolvedCSS = ""
