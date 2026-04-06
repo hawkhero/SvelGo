@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "mcp__pal__planner"
+      "mcp__pal__planner",
+      "Skill(update-config)",
+      "mcp__reddit__fetch_reddit_hot_threads",
+      "mcp__reddit__fetch_reddit_post_content"
     ]
   }
 }
