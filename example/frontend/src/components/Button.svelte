@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Writable } from 'svelte/store'
-  import { getComponentStore } from '../runtime/state'
-  import { sendEvent } from '../runtime/ws'
+  import { getComponentStore } from 'svelgo/runtime/state'
+  import { sendEvent } from 'svelgo/runtime/ws'
 
   let { id }: { id: string } = $props()
 

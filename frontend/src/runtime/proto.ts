@@ -1,5 +1,5 @@
 import protobuf from 'protobufjs/light'
-import descriptor from '../ui_descriptor.json'
+import descriptor from './ui_descriptor.json'
 
 const root = protobuf.Root.fromJSON(descriptor as protobuf.INamespace)
 
@@ -7,9 +7,12 @@ const PageStateMsg   = root.lookupType('ui.PageState')
 const ClientEventMsg = root.lookupType('ui.ClientEvent')
 const StateUpdateMsg = root.lookupType('ui.StateUpdate')
 
-// Map component type → protobuf message type for decoding state_bytes
-const componentTypes: Record<string, protobuf.Type> = {
-  Button: root.lookupType('ui.ButtonState'),
+// Map component type → protobuf message type for decoding state_bytes.
+// Applications register their component decoders by calling registerComponentDecoder().
+const componentTypes: Record<string, protobuf.Type> = {}
+
+export function registerComponentDecoder(typeName: string, msgType: protobuf.Type) {
+  componentTypes[typeName] = msgType
 }
 
 // Decode the base64 protobuf blob injected into the HTML shell

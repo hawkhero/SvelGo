@@ -9,6 +9,16 @@ import (
 )
 
 var devMode = os.Getenv("SVELGO_DEV") == "1"
+
+// staticFS holds the embedded frontend assets. Applications must call
+// SetStaticFS before calling Setup (unless running in dev mode).
+var staticFS fs.FS
+
+// SetStaticFS registers the embedded static filesystem. Call this from an
+// init() function in your application's embed.go, before Setup().
+func SetStaticFS(f fs.FS) {
+	staticFS = f
+}
 var debugMode = os.Getenv("SVELGO_DEBUG") == "1"
 
 var (
@@ -25,6 +35,9 @@ type viteManifestEntry struct {
 // Setup initialises the asset resolver and registers HTTP handlers for
 // /ws and /assets/. Call this before registering your own routes.
 func Setup() {
+	if !devMode && staticFS == nil {
+		log.Fatal("SvelGo: call svelgo.SetStaticFS() before Setup() — see https://github.com/svelgo/svelgo#embedding")
+	}
 	if debugMode {
 		log.Println("SvelGo: debug mode enabled")
 	}
@@ -34,7 +47,7 @@ func Setup() {
 		log.Println("SvelGo: dev mode — Vite dev server expected at :5173")
 	} else {
 		// Parse the Vite manifest to find the hashed bundle filenames
-		manifestData, err := staticFS.ReadFile("static/.vite/manifest.json")
+		manifestData, err := fs.ReadFile(staticFS, "static/.vite/manifest.json")
 		if err != nil {
 			log.Fatal("SvelGo: could not read static/.vite/manifest.json — run `cd frontend && npm run build` first")
 		}

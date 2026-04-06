@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"svelgo"
-	uipb "svelgo/gen/ui"
+	svelgo "github.com/svelgo/svelgo"
+	apipb "example/buttonapp/gen/app"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -23,7 +23,7 @@ func (b *Button) ComponentType() string { return "Button" }
 func (b *Button) Slot()          string { return "root" }
 
 func (b *Button) ProtoState() proto.Message {
-	return &uipb.ButtonState{
+	return &apipb.ButtonState{
 		Label:      b.label,
 		ClickCount: int32(b.clickCount),
 	}

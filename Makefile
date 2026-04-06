@@ -1,6 +1,6 @@
-.PHONY: proto dev build clean
+.PHONY: proto example dev build clean
 
-# Regenerate Go and JS protobuf artifacts
+# Regenerate framework Go and JS protobuf artifacts (framework messages only)
 proto:
 	PATH="$$PATH:$$HOME/go/bin" protoc \
 		--go_out=gen \
@@ -10,18 +10,20 @@ proto:
 	mv gen/ui.pb.go gen/ui/ui.pb.go
 	cd frontend && ./node_modules/.bin/pbjs \
 		-t json ../proto/ui.proto \
-		-o src/ui_descriptor.json
+		-o src/runtime/ui_descriptor.json
 
-# Development: Go server + Vite dev server
+# Build the example app (frontend + Go binary)
+example:
+	$(MAKE) -C example
+
+# Development: run the example app against the Vite dev server
 # Visit http://localhost:8080
 dev:
-	cd frontend && npm run dev &
-	SVELGO_DEV=1 go run ./cmd/app/
+	$(MAKE) -C example dev
 
-# Production build: bundle frontend, then compile Go binary
+# Production build of the example app
 build:
-	cd frontend && npm run build
-	go build -o dist/svelgo-app ./cmd/app/
+	$(MAKE) -C example build
 
 clean:
-	rm -rf dist/ static/assets static/.vite
+	rm -rf example/dist example/static/assets example/static/.vite

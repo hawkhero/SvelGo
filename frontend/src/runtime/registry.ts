@@ -1,7 +1,7 @@
-import Button from '../components/Button.svelte'
-
 // Maps component type strings (from Go) to Svelte component constructors.
-// Add new components here as the framework grows.
-export const ComponentRegistry: Record<string, any> = {
-  Button,
+// Applications register their components by calling registerComponent().
+export const ComponentRegistry: Record<string, any> = {}
+
+export function registerComponent(typeName: string, ctor: any) {
+  ComponentRegistry[typeName] = ctor
 }

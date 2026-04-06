@@ -1,4 +1,4 @@
-module svelgo
+module github.com/svelgo/svelgo
 
 go 1.26
 

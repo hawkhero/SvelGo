@@ -8,7 +8,7 @@ import (
 	"html/template"
 	"net/http"
 
-	uipb "svelgo/gen/ui"
+	uipb "github.com/svelgo/svelgo/gen/ui"
 
 	"google.golang.org/protobuf/proto"
 )

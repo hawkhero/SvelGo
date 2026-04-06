@@ -1,6 +1,6 @@
 syntax = "proto3";
 package ui;
-option go_package = "svelgo/gen/ui";
+option go_package = "github.com/svelgo/svelgo/gen/ui";
 
 // Initial page state — base64-encoded and injected into the HTML shell
 message PageState {
@@ -29,9 +29,3 @@ message StateUpdate {
   repeated ComponentState updated_components = 2;
 }
 
-// ── Component-specific state messages ──────────────────────────────────────
-
-message ButtonState {
-  string label       = 1;
-  int32  click_count = 2;
-}

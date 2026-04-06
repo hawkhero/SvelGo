@@ -1,0 +1,23 @@
+{
+  "nested": {
+    "app": {
+      "options": {
+        "go_package": "example/buttonapp/gen/app"
+      },
+      "nested": {
+        "ButtonState": {
+          "fields": {
+            "label": {
+              "type": "string",
+              "id": 1
+            },
+            "clickCount": {
+              "type": "int32",
+              "id": 2
+            }
+          }
+        }
+      }
+    }
+  }
+}

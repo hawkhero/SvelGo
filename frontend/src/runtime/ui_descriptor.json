@@ -2,7 +2,7 @@
   "nested": {
     "ui": {
       "options": {
-        "go_package": "svelgo/gen/ui"
+        "go_package": "github.com/svelgo/svelgo/gen/ui"
       },
       "nested": {
         "PageState": {
@@ -63,18 +63,6 @@
             "updatedComponents": {
               "rule": "repeated",
               "type": "ComponentState",
-              "id": 2
-            }
-          }
-        },
-        "ButtonState": {
-          "fields": {
-            "label": {
-              "type": "string",
-              "id": 1
-            },
-            "clickCount": {
-              "type": "int32",
               "id": 2
             }
           }
