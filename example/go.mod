@@ -2,7 +2,7 @@ module example/buttonapp
 
 go 1.26
 
-require github.com/svelgo/svelgo v0.0.0
+require github.com/hawkhero/svelgo v0.0.0
 
 require (
 	github.com/gorilla/websocket v1.5.1 // indirect
@@ -10,4 +10,4 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
-replace github.com/svelgo/svelgo => ../
+replace github.com/hawkhero/svelgo => ../

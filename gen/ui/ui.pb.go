@@ -384,7 +384,7 @@ const file_ui_proto_rawDesc = "" +
 	"\bdisabled\x18\x02 \x01(\bR\bdisabled\" \n" +
 	"\n" +
 	"LabelState\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04textB!Z\x1fgithub.com/svelgo/svelgo/gen/uib\x06proto3"
+	"\x04text\x18\x01 \x01(\tR\x04textB!Z\x1fgithub.com/hawkhero/svelgo/gen/uib\x06proto3"
 
 var (
 	file_ui_proto_rawDescOnce sync.Once

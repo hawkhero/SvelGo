@@ -1,7 +1,7 @@
 package component
 
 import (
-	uipb "github.com/svelgo/svelgo/gen/ui"
+	uipb "github.com/hawkhero/svelgo/gen/ui"
 	"google.golang.org/protobuf/proto"
 )
 

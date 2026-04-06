@@ -1,6 +1,6 @@
 syntax = "proto3";
 package ui;
-option go_package = "github.com/svelgo/svelgo/gen/ui";
+option go_package = "github.com/hawkhero/svelgo/gen/ui";
 
 // Initial page state — base64-encoded and injected into the HTML shell
 message PageState {

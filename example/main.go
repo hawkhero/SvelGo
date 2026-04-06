@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	svelgo "github.com/svelgo/svelgo"
-	"github.com/svelgo/svelgo/component"
+	svelgo "github.com/hawkhero/svelgo"
+	"github.com/hawkhero/svelgo/component"
 )
 
 func main() {

@@ -5,14 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repository layout
 
 ```
-svelgo/                          ← Go module: github.com/svelgo/svelgo (the framework)
+svelgo/                          ← Go module: github.com/hawkhero/svelgo (the framework)
 ├── *.go                         ← Framework package (package svelgo)
 ├── proto/ui.proto               ← Framework wire types only (4 core messages)
 ├── gen/ui/ui.pb.go              ← Auto-generated; do not edit
 ├── frontend/                    ← npm package "svelgo" (TypeScript runtime)
 │   └── src/runtime/             ← client.ts, ws.ts, state.ts, proto.ts, registry.ts
 └── example/                     ← Self-contained example app (separate go.mod)
-    ├── go.mod                   ← replace github.com/svelgo/svelgo => ../
+    ├── go.mod                   ← replace github.com/hawkhero/svelgo => ../
     ├── main.go, embed.go        ← App entry point + embed directive
     ├── proto/app.proto          ← App-specific messages (ButtonState)
     ├── gen/app/app.pb.go        ← Auto-generated; do not edit
@@ -83,7 +83,7 @@ Browser → `sendEvent(componentId, eventType)` → binary protobuf `ClientEvent
 | `ws.go` | `WSHandler` — WebSocket endpoint, event dispatch |
 | `assets.go` | `Setup()`, `SetStaticFS()` — asset resolution, HTTP handler registration |
 | `proto/ui.proto` | Framework wire types: `PageState`, `ComponentState`, `ClientEvent`, `StateUpdate` |
-| `gen/ui/ui.pb.go` | Auto-generated (import as `github.com/svelgo/svelgo/gen/ui`) |
+| `gen/ui/ui.pb.go` | Auto-generated (import as `github.com/hawkhero/svelgo/gen/ui`) |
 | `frontend/src/runtime/client.ts` | `bootstrap()` — entry point for browser runtime |
 | `frontend/src/runtime/proto.ts` | Protobuf encode/decode + `registerComponentDecoder()` |
 | `frontend/src/runtime/state.ts` | Per-component Svelte `writable` stores |
@@ -124,4 +124,4 @@ func init() {
 - In Svelte 5 components, use `$effect` + `store.subscribe(...)` — not `$store` shorthand
 - `ws.binaryType = 'arraybuffer'` must be set before messages arrive (done in `ws.ts`)
 - `svelgo.Setup()` must be called before registering application routes
-- The `example/go.mod` uses `replace github.com/svelgo/svelgo => ../` for local development; remove it when the framework is published
+- The `example/go.mod` uses `replace github.com/hawkhero/svelgo => ../` for local development; remove it when the framework is published

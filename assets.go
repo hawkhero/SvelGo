@@ -36,7 +36,7 @@ type viteManifestEntry struct {
 // /ws and /assets/. Call this before registering your own routes.
 func Setup() {
 	if !devMode && staticFS == nil {
-		log.Fatal("SvelGo: call svelgo.SetStaticFS() before Setup() — see https://github.com/svelgo/svelgo#embedding")
+		log.Fatal("SvelGo: call svelgo.SetStaticFS() before Setup() — see https://github.com/hawkhero/svelgo#embedding")
 	}
 	if debugMode {
 		log.Println("SvelGo: debug mode enabled")

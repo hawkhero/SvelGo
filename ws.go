@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	uipb "github.com/svelgo/svelgo/gen/ui"
+	uipb "github.com/hawkhero/svelgo/gen/ui"
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"

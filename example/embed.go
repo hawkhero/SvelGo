@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"log"
 
-	svelgo "github.com/svelgo/svelgo"
+	svelgo "github.com/hawkhero/svelgo"
 )
 
 //go:embed all:static

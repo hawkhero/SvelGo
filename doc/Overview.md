@@ -11,7 +11,7 @@ SvelGo is a Go-first UI framework. Developers declare pages and components in Go
 
 ## Key Modules
 
-### Framework (Go) — root package `github.com/svelgo/svelgo`
+### Framework (Go) — root package `github.com/hawkhero/svelgo`
 
 | File | Responsibility |
 |---|---|
@@ -22,7 +22,7 @@ SvelGo is a Go-first UI framework. Developers declare pages and components in Go
 | `assets.go` | `Setup()`, `SetStaticFS()` — resolves asset paths (dev: Vite URL, prod: embedded hashed bundle) and registers `/ws` and `/assets/` handlers |
 | `template.go` | HTML shell template — the only HTML the server ever writes |
 | `proto/ui.proto` | Framework wire types: `PageState`, `ComponentState`, `ClientEvent`, `StateUpdate` |
-| `gen/ui/ui.pb.go` | Auto-generated protobuf types (import as `github.com/svelgo/svelgo/gen/ui`) |
+| `gen/ui/ui.pb.go` | Auto-generated protobuf types (import as `github.com/hawkhero/svelgo/gen/ui`) |
 
 ### Framework (TypeScript) — npm package `svelgo`
 
