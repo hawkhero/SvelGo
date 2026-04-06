@@ -1,7 +1,7 @@
 import protobuf from 'protobufjs/light'
 import descriptor from './ui_descriptor.json'
 
-const root = protobuf.Root.fromJSON(descriptor as protobuf.INamespace)
+export const root = protobuf.Root.fromJSON(descriptor as protobuf.INamespace)
 
 const PageStateMsg   = root.lookupType('ui.PageState')
 const ClientEventMsg = root.lookupType('ui.ClientEvent')

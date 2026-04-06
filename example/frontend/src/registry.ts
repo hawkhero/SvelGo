@@ -1,4 +1,2 @@
-import { registerComponent } from 'svelgo/runtime/registry'
-import Button from './components/Button.svelte'
-
-registerComponent('Button', Button)
+// No app-specific components to register.
+// Built-in components (svelgo.Button, svelgo.Label) are auto-registered by the framework.

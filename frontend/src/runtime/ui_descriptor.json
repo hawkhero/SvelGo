@@ -66,6 +66,26 @@
               "id": 2
             }
           }
+        },
+        "ButtonState": {
+          "fields": {
+            "label": {
+              "type": "string",
+              "id": 1
+            },
+            "disabled": {
+              "type": "bool",
+              "id": 2
+            }
+          }
+        },
+        "LabelState": {
+          "fields": {
+            "text": {
+              "type": "string",
+              "id": 1
+            }
+          }
         }
       }
     }

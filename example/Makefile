@@ -1,16 +1,9 @@
 .PHONY: proto dev build clean
 
-# Regenerate app-specific Go protobuf types and JS descriptor
+# No app-specific proto messages — all built-ins are in the framework.
+# Add app.proto here if you need custom component state messages.
 proto:
-	PATH="$$PATH:$$HOME/go/bin" protoc \
-		--go_out=gen \
-		--go_opt=paths=source_relative \
-		--proto_path=proto \
-		proto/app.proto
-	mv gen/app.pb.go gen/app/app.pb.go
-	../../frontend/node_modules/.bin/pbjs \
-		-t json proto/app.proto \
-		-o frontend/src/app_descriptor.json
+	@echo "No app-specific proto messages to generate."
 
 # Development: Go server + Vite dev server
 # Visit http://localhost:8080

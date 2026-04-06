@@ -3,6 +3,7 @@ import { ComponentRegistry } from './registry'
 import { initComponentState } from './state'
 import { decodePageState, decodeComponentState } from './proto'
 import { openWebSocket } from './ws'
+import './builtins'
 
 interface ManifestEntry {
   id:   string

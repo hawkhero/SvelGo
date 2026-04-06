@@ -6,47 +6,26 @@ import (
 	"net/http"
 
 	svelgo "github.com/svelgo/svelgo"
-	apipb "example/buttonapp/gen/app"
-
-	"google.golang.org/protobuf/proto"
+	"github.com/svelgo/svelgo/component"
 )
-
-// Button is a server-side component. It holds all state and handles events.
-type Button struct {
-	id         string
-	label      string
-	clickCount int
-}
-
-func (b *Button) ComponentID()   string { return b.id }
-func (b *Button) ComponentType() string { return "Button" }
-func (b *Button) Slot()          string { return "root" }
-
-func (b *Button) ProtoState() proto.Message {
-	return &apipb.ButtonState{
-		Label:      b.label,
-		ClickCount: int32(b.clickCount),
-	}
-}
-
-func (b *Button) HandleEvent(eventType string, _ []byte) error {
-	if eventType == "click" {
-		b.clickCount++
-		b.label = fmt.Sprintf("Click me (%d clicks)", b.clickCount)
-		log.Printf("Button %q clicked — count: %d", b.id, b.clickCount)
-	}
-	return nil
-}
 
 func main() {
 	svelgo.Setup()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		clickCount := 0
+		btn := &component.Button{
+			ID:    "btn-1",
+			Label: "Click me (0 clicks)",
+		}
+		btn.OnClick = func() {
+			clickCount++
+			btn.Label = fmt.Sprintf("Click me (%d clicks)", clickCount)
+			log.Printf("Button %q clicked — count: %d", btn.ID, clickCount)
+		}
+
 		page := svelgo.NewPage()
-		page.Add(&Button{
-			id:    "btn-1",
-			label: "Click me (0 clicks)",
-		})
+		page.Add(btn)
 		page.Render(w, r)
 	})
 

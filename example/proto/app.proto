@@ -1,8 +1,0 @@
-syntax = "proto3";
-package app;
-option go_package = "example/buttonapp/gen/app";
-
-message ButtonState {
-  string label       = 1;
-  int32  click_count = 2;
-}

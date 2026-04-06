@@ -257,6 +257,104 @@ func (x *StateUpdate) GetUpdatedComponents() []*ComponentState {
 	return nil
 }
 
+// Built-in Button component state
+type ButtonState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Disabled      bool                   `protobuf:"varint,2,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ButtonState) Reset() {
+	*x = ButtonState{}
+	mi := &file_ui_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ButtonState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ButtonState) ProtoMessage() {}
+
+func (x *ButtonState) ProtoReflect() protoreflect.Message {
+	mi := &file_ui_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ButtonState.ProtoReflect.Descriptor instead.
+func (*ButtonState) Descriptor() ([]byte, []int) {
+	return file_ui_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ButtonState) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *ButtonState) GetDisabled() bool {
+	if x != nil {
+		return x.Disabled
+	}
+	return false
+}
+
+// Built-in Label component state
+type LabelState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LabelState) Reset() {
+	*x = LabelState{}
+	mi := &file_ui_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LabelState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LabelState) ProtoMessage() {}
+
+func (x *LabelState) ProtoReflect() protoreflect.Message {
+	mi := &file_ui_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LabelState.ProtoReflect.Descriptor instead.
+func (*LabelState) Descriptor() ([]byte, []int) {
+	return file_ui_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *LabelState) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 var File_ui_proto protoreflect.FileDescriptor
 
 const file_ui_proto_rawDesc = "" +
@@ -280,7 +378,13 @@ const file_ui_proto_rawDesc = "" +
 	"\apayload\x18\x04 \x01(\fR\apayload\"i\n" +
 	"\vStateUpdate\x12\x17\n" +
 	"\apage_id\x18\x01 \x01(\tR\x06pageId\x12A\n" +
-	"\x12updated_components\x18\x02 \x03(\v2\x12.ui.ComponentStateR\x11updatedComponentsB!Z\x1fgithub.com/svelgo/svelgo/gen/uib\x06proto3"
+	"\x12updated_components\x18\x02 \x03(\v2\x12.ui.ComponentStateR\x11updatedComponents\"?\n" +
+	"\vButtonState\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x1a\n" +
+	"\bdisabled\x18\x02 \x01(\bR\bdisabled\" \n" +
+	"\n" +
+	"LabelState\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04textB!Z\x1fgithub.com/svelgo/svelgo/gen/uib\x06proto3"
 
 var (
 	file_ui_proto_rawDescOnce sync.Once
@@ -294,12 +398,14 @@ func file_ui_proto_rawDescGZIP() []byte {
 	return file_ui_proto_rawDescData
 }
 
-var file_ui_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_ui_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_ui_proto_goTypes = []any{
 	(*PageState)(nil),      // 0: ui.PageState
 	(*ComponentState)(nil), // 1: ui.ComponentState
 	(*ClientEvent)(nil),    // 2: ui.ClientEvent
 	(*StateUpdate)(nil),    // 3: ui.StateUpdate
+	(*ButtonState)(nil),    // 4: ui.ButtonState
+	(*LabelState)(nil),     // 5: ui.LabelState
 }
 var file_ui_proto_depIdxs = []int32{
 	1, // 0: ui.PageState.components:type_name -> ui.ComponentState
@@ -322,7 +428,7 @@ func file_ui_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ui_proto_rawDesc), len(file_ui_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -29,3 +29,14 @@ message StateUpdate {
   repeated ComponentState updated_components = 2;
 }
 
+// Built-in Button component state
+message ButtonState {
+  string label    = 1;
+  bool   disabled = 2;
+}
+
+// Built-in Label component state
+message LabelState {
+  string text = 1;
+}
+
