@@ -15,19 +15,15 @@ registerComponentDecoder('svelgo.Button', root.lookupType('ui.ButtonState'))
 registerComponentDecoder('svelgo.Label', root.lookupType('ui.LabelState'))
 ```
 
-This happens before any app code runs. Your `registry.ts` and `proto.ts` files can be empty (or contain only app-specific additions). The example app ships with exactly that:
+This happens before any app code runs. For a built-in-only app, `registry.ts` and `proto.ts` do **not** need to exist at all — and `main.ts` should **not** import them. The minimal `main.ts` is:
 
 ```ts
-// registry.ts
-// No app-specific components to register.
-// Built-in components (svelgo.Button, svelgo.Label) are auto-registered by the framework.
+import { bootstrap } from 'svelgo/runtime/client'
+
+bootstrap()
 ```
 
-```ts
-// proto.ts
-// No app-specific component decoders needed.
-// Built-in components (svelgo.Button, svelgo.Label) are auto-registered by the framework.
-```
+`registry.ts` and `proto.ts` are only created (and only imported from `main.ts`) when your app adds custom Svelte components. See the "Adding a custom component" section in `doc/getting-started.md` for that workflow.
 
 ---
 

@@ -36,8 +36,8 @@ example/                         ← module example/buttonapp (a self-contained 
 └── frontend/                    ← Vite + Svelte app (imports the svelgo npm package)
     └── src/
         ├── main.ts              ← calls bootstrap() — this is the entire entry point
-        ├── proto.ts             ← register custom component decoders (empty if none)
-        └── registry.ts          ← register custom Svelte components (empty if none)
+        ├── proto.ts             ← only needed if you add custom components
+        └── registry.ts          ← only needed if you add custom components
 ```
 
 **The framework is never modified for a new application.** Everything app-specific lives in the app module (the `example/` directory here).
@@ -95,14 +95,17 @@ myapp/
 │   └── .gitkeep     ← lets go:embed compile before the first npm run build
 └── frontend/
     ├── package.json
+    ├── svelte.config.ts     ← minimal Svelte config (prevents vite-plugin-svelte warning)
     ├── vite.config.ts
     ├── index.html
     └── src/
-        ├── main.ts          ← calls bootstrap()
-        ├── proto.ts         ← optional: register custom component decoders
-        ├── registry.ts      ← optional: register custom Svelte components
-        └── components/      ← optional: custom Svelte components
+        ├── main.ts          ← calls bootstrap() — the entire entry point for built-in-only apps
+        ├── proto.ts         ← only needed for custom components; do not create for built-in-only apps
+        ├── registry.ts      ← only needed for custom components; do not create for built-in-only apps
+        └── components/      ← only needed for custom components
 ```
+
+> **Built-in-only apps:** if you only use `component.Button` and `component.Label`, create only `main.ts`. Do **not** create `proto.ts`, `registry.ts`, or `components/` — they are not needed and their absence is correct. If those files are absent and `main.ts` imports them, the build will fail.
 
 ### Step 1 — Initialize the Go module
 
@@ -214,7 +217,7 @@ func main() {
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
     "vite": "^6.3.0",
-    "svelgo": "file:/path/to/svelgo/frontend"
+    "svelgo": "file:../../frontend"
   },
   "dependencies": {
     "protobufjs": "^7.4.0"
@@ -222,11 +225,19 @@ func main() {
 }
 ```
 
-> The `svelgo` entry points to the framework's `frontend/` directory. Adjust the path to match your layout, or change it to a published npm package name once the framework is released.
+> **Path convention for the `svelgo` local dependency:** the path is relative from your app's `frontend/` directory to the framework's `frontend/` directory. The standard layout places your app one level under the framework root (e.g. `svelgo/myapp/`), making the correct path `../../frontend` — two levels up to reach the framework root, then into `frontend/`. If your app is nested deeper (e.g. `svelgo/demo/clickcounter/`), add one extra `../` per additional level: `../../../frontend`. `example/frontend/package.json` uses `../../frontend` as the reference implementation. When the framework is published to npm, replace the `file:` path with the published package name.
 
 ```bash
 cd frontend && npm install
 ```
+
+**frontend/svelte.config.ts:**
+
+```ts
+export default {}
+```
+
+This file suppresses the `[vite-plugin-svelte] no Svelte config found` warning emitted on every dev-server startup. The empty export is correct — the plugin's defaults are suitable for all SvelGo apps.
 
 **frontend/vite.config.ts:**
 
@@ -532,7 +543,7 @@ const appRoot = protobuf.Root.fromJSON(appDescriptor as protobuf.INamespace)
 registerComponentDecoder('Counter', appRoot.lookupType('app.CounterState'))
 ```
 
-**Update frontend/src/main.ts** to import both registration files before `bootstrap()`:
+**Update frontend/src/main.ts** to import both registration files before `bootstrap()`. These imports are only correct once `proto.ts` and `registry.ts` actually exist (you created them in steps 5 and 6 above). Do **not** add these lines to a built-in-only app — importing a file that does not exist will break the build with "cannot find module './proto'".
 
 ```ts
 import './proto'
