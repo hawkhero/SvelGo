@@ -33,20 +33,21 @@ Invoke `svelgo-dev` with: *"Before any app work begins, write the initial develo
 This is the **source of truth** `go-web-dev` will read in Step 1. It also acts as a baseline sanity check on `svelgo-dev`'s new documentation responsibility — if the doc cannot be written without hand-waving, that itself is the first friction signal.
 
 ### Step 1 — Build & log
-Invoke `go-web-dev` with: *"Read `doc/` first. Then build the **mandatory baseline app**, and optionally up to 2 more of your own choosing. Use only the tutorial — no guessing at APIs, no reading framework internals to fill gaps. Every pain point, missing doc, awkward API, or dev/prod divergence must be logged as a concrete entry in `FRICTION.md`. Pain points about the tutorial itself (incorrect, incomplete, or misleading) count and must be logged."*
+Invoke `go-web-dev` with: *"Read `doc/` first. Then build the **mandatory baseline app** from scratch in a new directory `demo/clickcounter/` under the repo root (sibling of `example/`). Follow `doc/getting-started.md`'s "Creating a new application" section step by step — do NOT copy from `example/`. Start from a blank directory. Use only the tutorial and `doc/built-in-components.md` — no guessing at APIs, no reading framework internals to fill gaps. Every pain point, missing doc, awkward API, or dev/prod divergence must be logged as a concrete entry in `FRICTION.md`. Pain points about the tutorial itself (incorrect, incomplete, or misleading steps in `doc/`) count and must be logged."*
 
-**Mandatory baseline app:** a click counter — one `component.Button` and one `component.Label` wired together, where each click increments a counter whose value is shown in the Label and also reflected in the Button's own label. This is fixed so that any loop failure is unambiguously a loop/framework/doc defect, not an app-choice problem.
+**Mandatory baseline app:** a click counter built in `demo/clickcounter/` — one `component.Button` and one `component.Label` wired together, where each click increments a counter whose value is shown in the Label and also reflected in the Button's own label. The app must be scaffolded from zero (blank directory, fresh `go mod init`, fresh `npm init`) following only the doc. This is fixed so that any loop failure is unambiguously a loop/framework/doc defect, not an app-choice problem.
 
-**Optional additional apps (0–2):** go-web-dev picks any trivially simple app that uses only the two built-in components. Examples: a "label echoes the last button clicked" two-button demo, a two-button toggle that flips a label between two states. These are optional and exist only to broaden the surface area a little.
+**Optional additional apps (0–2):** go-web-dev picks any trivially simple app that uses only the two built-in components, each in its own subdirectory under `demo/`. Examples: a "label echoes the last button clicked" two-button demo, a two-button toggle that flips a label between two states. These are optional and exist only to broaden the surface area a little.
 
 Constraints:
 - No edits to `*.go` at repo root, `frontend/src/runtime/`, `component/`, or `proto/ui.proto`.
+- No copying from `example/` — each demo app must be scaffolded from scratch.
 - No new components, no new proto messages.
-- Must work end-to-end in dev mode (`make dev`), verified in a browser.
+- Must work end-to-end in dev mode, verified in a browser.
 - Every pain point — however small — must be written to `FRICTION.md` as a concrete entry.
 
 Expected output:
-- The mandatory baseline app + 0–2 optional apps, all working (or explicit reports of what failed and why)
+- The mandatory baseline app at `demo/clickcounter/` + 0–2 optional apps under `demo/`, all working (or explicit reports of what failed and why)
 - Zero-to-many new entries appended to `FRICTION.md` under **Open**
 - A short summary of which apps were built and what felt wrong
 
@@ -88,8 +89,8 @@ Read-only for `go-web-dev` in Step 1 except where noted:
 - `doc/` — the tutorial written in Step 0; **the primary source of truth for app development**
 - `CLAUDE.md` — secondary reference only if `doc/` is silent on something
 - `FRICTION.md` — shared log, append-only during Step 1
-- `example/main.go` — the file go-web-dev will edit (or create sibling app directories)
-- `example/frontend/src/registry.ts`, `example/frontend/src/proto.ts` — may need inspection to confirm built-in components are registered on the frontend
+- `demo/clickcounter/` — the directory go-web-dev creates from scratch; must not pre-exist
+- `example/` — **do not copy or modify**; may be referenced to verify framework structure if doc is silent, but must not be the source of scaffolding
 
 For `svelgo-dev` in Step 2, editable scope is the full framework core + `doc/` as defined in its agent file.
 

@@ -14,18 +14,26 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		clickCount := 0
+
+		lbl := &component.Label{
+			ID:   "counter-label",
+			Text: "Count: 0",
+		}
+
 		btn := &component.Button{
-			ID:    "btn-1",
+			ID:    "counter-btn",
 			Label: "Click me (0 clicks)",
 		}
+
 		btn.OnClick = func() {
 			clickCount++
 			btn.Label = fmt.Sprintf("Click me (%d clicks)", clickCount)
-			log.Printf("Button %q clicked — count: %d", btn.ID, clickCount)
+			lbl.Text = fmt.Sprintf("Count: %d", clickCount)
+			log.Printf("Button clicked — count: %d", clickCount)
 		}
 
 		page := svelgo.NewPage()
-		page.Add(btn)
+		page.Add(lbl).Add(btn)
 		page.Render(w, r)
 	})
 

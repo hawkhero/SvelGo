@@ -2,7 +2,7 @@
   "nested": {
     "ui": {
       "options": {
-        "go_package": "github.com/svelgo/svelgo/gen/ui"
+        "go_package": "github.com/hawkhero/svelgo/gen/ui"
       },
       "nested": {
         "PageState": {

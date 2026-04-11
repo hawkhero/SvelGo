@@ -73,28 +73,34 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Send updated state back to the client
-		stateBytes, err := proto.Marshal(comp.ProtoState())
-		if err != nil {
-			continue
+		// Collect updated state for ALL components in the session so that
+		// cross-component mutations (e.g. a Button's OnClick updating a Label)
+		// are pushed to the client in the same frame.
+		sess.mu.Lock()
+		var updatedComponents []*uipb.ComponentState
+		for _, c := range sess.components {
+			stateBytes, err := proto.Marshal(c.ProtoState())
+			if err != nil {
+				log.Printf("WS marshal error for component %s: %v", c.ComponentID(), err)
+				continue
+			}
+			updatedComponents = append(updatedComponents, &uipb.ComponentState{
+				Id:         c.ComponentID(),
+				Type:       c.ComponentType(),
+				StateBytes: stateBytes,
+			})
 		}
 
 		update := &uipb.StateUpdate{
-			PageId: pageID,
-			UpdatedComponents: []*uipb.ComponentState{
-				{
-					Id:         comp.ComponentID(),
-					Type:       comp.ComponentType(),
-					StateBytes: stateBytes,
-				},
-			},
+			PageId:            pageID,
+			UpdatedComponents: updatedComponents,
 		}
 		updateBytes, err := proto.Marshal(update)
 		if err != nil {
+			sess.mu.Unlock()
 			continue
 		}
 
-		sess.mu.Lock()
 		if sess.conn != nil {
 			sess.conn.WriteMessage(websocket.BinaryMessage, updateBytes)
 		}
