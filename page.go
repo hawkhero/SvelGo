@@ -71,7 +71,11 @@ func (p *Page) Render(w http.ResponseWriter, r *http.Request) {
 	// Resolve asset paths (dev → Vite URLs, prod → hashed bundle)
 	scriptPath, cssPath := resolveAssets()
 
-	manifestJSON, _ := json.Marshal(manifest)
+	manifestJSON, err := json.Marshal(manifest)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	data := pageRenderData{
 		PageID:      p.id,
 		StateBlob:   stateBlob,

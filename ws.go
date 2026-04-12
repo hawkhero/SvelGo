@@ -1,6 +1,7 @@
 package svelgo
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -35,9 +36,12 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 	sess.mu.Unlock()
 
 	defer func() {
+		// Clean up the connection reference and remove the session so that the
+		// component tree is not retained in memory after the browser disconnects.
 		sess.mu.Lock()
 		sess.conn = nil
 		sess.mu.Unlock()
+		globalSessionStore.Delete(pageID)
 	}()
 
 	for {
@@ -69,26 +73,25 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := handler.HandleEvent(clientEvent.EventType, clientEvent.Payload); err != nil {
-			log.Printf("WS event handler error: %v", err)
+			// Include full context so developers can locate the failure immediately.
+			log.Printf("WS HandleEvent error: page=%s component=%s type=%s event=%s: %v",
+				pageID, clientEvent.ComponentId, comp.ComponentType(), clientEvent.EventType, err)
 			continue
 		}
 
 		// Collect updated state for ALL components in the session so that
 		// cross-component mutations (e.g. a Button's OnClick updating a Label)
 		// are pushed to the client in the same frame.
+		//
+		// If any component fails to marshal we abort the entire update rather
+		// than sending a partial StateUpdate that would leave the client in a
+		// diverged state.
 		sess.mu.Lock()
-		var updatedComponents []*uipb.ComponentState
-		for _, c := range sess.components {
-			stateBytes, err := proto.Marshal(c.ProtoState())
-			if err != nil {
-				log.Printf("WS marshal error for component %s: %v", c.ComponentID(), err)
-				continue
-			}
-			updatedComponents = append(updatedComponents, &uipb.ComponentState{
-				Id:         c.ComponentID(),
-				Type:       c.ComponentType(),
-				StateBytes: stateBytes,
-			})
+		updatedComponents, marshalErr := marshalAllComponents(pageID, sess.components)
+		if marshalErr != nil {
+			sess.mu.Unlock()
+			log.Printf("WS state marshal failed (no update sent): page=%s: %v", pageID, marshalErr)
+			continue
 		}
 
 		update := &uipb.StateUpdate{
@@ -98,12 +101,35 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 		updateBytes, err := proto.Marshal(update)
 		if err != nil {
 			sess.mu.Unlock()
+			log.Printf("WS StateUpdate marshal error: page=%s: %v", pageID, err)
 			continue
 		}
 
 		if sess.conn != nil {
-			sess.conn.WriteMessage(websocket.BinaryMessage, updateBytes)
+			if writeErr := sess.conn.WriteMessage(websocket.BinaryMessage, updateBytes); writeErr != nil {
+				log.Printf("WS write error: page=%s: %v", pageID, writeErr)
+				sess.conn = nil
+			}
 		}
 		sess.mu.Unlock()
 	}
+}
+
+// marshalAllComponents serializes every component's ProtoState into a slice of
+// ComponentState messages. It returns an error (and a nil slice) if any single
+// component fails to marshal, so callers can enforce all-or-nothing updates.
+func marshalAllComponents(pageID string, components map[string]Component) ([]*uipb.ComponentState, error) {
+	result := make([]*uipb.ComponentState, 0, len(components))
+	for _, c := range components {
+		stateBytes, err := proto.Marshal(c.ProtoState())
+		if err != nil {
+			return nil, fmt.Errorf("component %s (type %s): %w", c.ComponentID(), c.ComponentType(), err)
+		}
+		result = append(result, &uipb.ComponentState{
+			Id:         c.ComponentID(),
+			Type:       c.ComponentType(),
+			StateBytes: stateBytes,
+		})
+	}
+	return result, nil
 }

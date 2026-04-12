@@ -379,8 +379,9 @@ Understanding the data flow helps when debugging:
 3. The browser loads the Svelte bundle. `bootstrap()` decodes the state blob, creates per-component Svelte stores, mounts each component, and opens a WebSocket to `/ws?page-id=...`.
 4. When a user interacts with a component (e.g., clicks a button), the Svelte component calls `sendEvent(id, 'click')`, which sends a binary protobuf frame over the WebSocket.
 5. The Go server receives the frame, looks up the component in the `PageSession`, calls `HandleEvent()` on it, and the component mutates its state.
-6. The framework serializes **all** component states as a single `StateUpdate` protobuf and sends it back. Every component in the session is included — cross-component mutations propagate in the same frame.
+6. The framework serializes **all** component states as a single `StateUpdate` protobuf and sends it back. Every component in the session is included — cross-component mutations propagate in the same frame. If any component fails to serialize, **no update is sent at all** (all-or-nothing) — the client state stays consistent even under partial failures.
 7. The browser decodes the update and patches each Svelte store, triggering re-renders.
+8. When the browser tab closes or navigates away, the WebSocket disconnects and the Go server frees the `PageSession` immediately. Sessions do not leak across page loads.
 
 ---
 
@@ -529,6 +530,8 @@ import Counter from './components/Counter.svelte'
 registerComponent('Counter', Counter)
 ```
 
+> **Duplicate registration:** if you call `registerComponent` twice with the same type name but a different constructor, the framework emits a `console.warn` and overwrites the earlier entry. Registering the same constructor twice (e.g. the same import from two files) is silently accepted. Each type name should be registered exactly once.
+
 ### 6. Register the proto decoder
 
 **frontend/src/proto.ts:**
@@ -559,6 +562,8 @@ bootstrap()
 
 - **State lives in Go.** Svelte is the view layer only — it holds no business logic or mutable state.
 - **`svelgo.Setup()`** must be called before all `http.HandleFunc` registrations.
-- **`SetStaticFS()`** must be called before `Setup()` (production mode only).
+- **`SetStaticFS()`** must be called before `Setup()` (production mode only). If `staticFS` has not been set in production mode, `Setup()` calls `log.Fatal` at startup rather than panicking later.
+- **Session lifetime** mirrors the WebSocket connection. The `PageSession` (component map + connection) is created by `page.Render()` and freed immediately when the WebSocket disconnects. There is one session per page load; navigating back or refreshing creates a new session.
+- **State updates are all-or-nothing.** If any component's `ProtoState()` fails to marshal, the entire `StateUpdate` is aborted — no partial frame is sent to the client.
 - Built-in component types use the `svelgo.` namespace (`"svelgo.Button"`, `"svelgo.Label"`), which cannot conflict with custom component names.
 - Proto field names are snake_case in `.proto`; protobufjs converts them to camelCase on the JavaScript side automatically.

@@ -2,6 +2,7 @@
 
 # Regenerate framework Go and JS protobuf artifacts (framework messages only)
 proto:
+	mkdir -p gen/ui
 	PATH="$$PATH:$$HOME/go/bin" protoc \
 		--go_out=gen \
 		--go_opt=paths=source_relative \

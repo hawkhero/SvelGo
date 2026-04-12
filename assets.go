@@ -70,7 +70,10 @@ func Setup() {
 		log.Printf("SvelGo: serving embedded assets (script: %s)", resolvedScript)
 
 		// Serve embedded static assets
-		staticRoot, _ := fs.Sub(staticFS, "static")
+		staticRoot, err := fs.Sub(staticFS, "static")
+		if err != nil {
+			log.Fatal("SvelGo: could not sub static/ from embedded FS:", err)
+		}
 		http.Handle("/assets/", http.FileServer(http.FS(staticRoot)))
 	}
 

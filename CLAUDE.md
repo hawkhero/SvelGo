@@ -110,7 +110,10 @@ Apps must embed their compiled frontend and call `SetStaticFS` before `Setup()`:
 var embeddedStatic embed.FS
 
 func init() {
-    sub, _ := fs.Sub(embeddedStatic, "static")
+    sub, err := fs.Sub(embeddedStatic, "static")
+    if err != nil {
+        log.Fatal("embed: could not sub static/:", err)
+    }
     svelgo.SetStaticFS(sub)
 }
 ```
