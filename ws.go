@@ -72,7 +72,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		if err := handler.HandleEvent(clientEvent.EventType, clientEvent.Payload); err != nil {
+		if err := handler.HandleEvent(r.Context(), clientEvent.EventType, clientEvent.Payload); err != nil {
 			// Include full context so developers can locate the failure immediately.
 			log.Printf("WS HandleEvent error: page=%s component=%s type=%s event=%s: %v",
 				pageID, clientEvent.ComponentId, comp.ComponentType(), clientEvent.EventType, err)

@@ -35,10 +35,10 @@ bootstrap()
 
 ```go
 type Button struct {
-    ID       string   // required — must be unique on the page
-    Label    string   // text shown on the button face
-    Disabled bool     // when true, the button is greyed out and ignores clicks
-    OnClick  func()   // called on the server when the user clicks the button
+    ID       string                        // required — must be unique on the page
+    Label    string                        // text shown on the button face
+    Disabled bool                          // when true, the button is greyed out and ignores clicks
+    OnClick  func(ctx context.Context) error  // called on the server when the user clicks the button
 }
 ```
 
@@ -69,9 +69,10 @@ btn := &component.Button{
     ID:    "submit-btn",
     Label: "Submit",
 }
-btn.OnClick = func() {
+btn.OnClick = func(ctx context.Context) error {
     btn.Label    = "Submitted"
     btn.Disabled = true
+    return nil
 }
 page.Add(btn)
 ```
@@ -118,6 +119,7 @@ A Button's `OnClick` callback can mutate any component's state — including a s
 package main
 
 import (
+    "context"
     "fmt"
     "log"
     "net/http"
@@ -143,10 +145,13 @@ func main() {
         }
 
         // Wire the callback: update both the button label and the separate Label.
-        btn.OnClick = func() {
+        // ctx carries cancellation and request-scoped values from the WebSocket
+        // connection — pass it to any downstream calls (database, RPC, etc.).
+        btn.OnClick = func(ctx context.Context) error {
             count++
             btn.Label = fmt.Sprintf("Click me (%d clicks)", count)
             lbl.Text  = fmt.Sprintf("Count: %d", count)
+            return nil
         }
 
         page := svelgo.NewPage()

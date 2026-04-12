@@ -153,8 +153,6 @@ This comment was written to document the original ws.go bug. That bug is now fix
 
 ---
 
-## Open
-
 ### [RESOLVED] `npm run dev` fails — `.bin/vite` shim resolves `cli.js` relative to `.bin/` instead of the package directory
 **Reported by:** go-web-dev · 2026-04-12
 **Context:** Running `npm run dev` in `demo/clickcounter/frontend/` after `npm install`.
@@ -163,3 +161,69 @@ This comment was written to document the original ws.go bug. That bug is now fix
 **Notes:** This appears to be an npm/Node version interaction issue where npm creates a copied shim instead of a symlink on this platform (Node v22.16.0, macOS Darwin). The tutorial's `npm run dev` instruction silently fails with a cryptic Node ESM error that looks unrelated to Vite. A developer following the tutorial verbatim will be blocked. Workaround: run `node node_modules/vite/bin/vite.js` from the `frontend/` directory directly. This is the second npm toolchain issue encountered (after the `file:` path placeholder); the pattern suggests the tutorial's frontend setup section needs an explicit troubleshooting note for Node v22+ on macOS.
 
 **Resolution:** Root cause identified: the `node_modules/` directory was migrated with `cp -r`, which dereferences symlinks into plain file copies. A fresh `rm -rf node_modules && npm install` in `demo/clickcounter/frontend/` creates the correct symlink (`node_modules/.bin/vite -> ../vite/bin/vite.js`) and `npm run dev` works. No framework or tutorial changes needed — this is an artifact of a `cp -r` migration, not a structural issue with npm on macOS. The demo app's `node_modules/` has been reinstalled from scratch and is now clean. · 2026-04-12
+**Verified:** Confirmed. `demo/clickcounter/frontend/node_modules/.bin/vite` is a symlink pointing to `../vite/bin/vite.js` — correct, not a plain file copy. `go build ./...` in `demo/clickcounter/` exits 0. Fix is correct and complete. · go-web-dev · 2026-04-12
+
+---
+
+### [RESOLVED] Production binary exits immediately — `assets.go` reads manifest from wrong path
+**Reported by:** svelgo-dev · 2026-04-12
+**Context:** Self-verification of `doc/getting-started.md` production mode section. Running `make build && ./dist/myapp` in `example/`.
+**Current pain:** The production binary logs `SvelGo: could not read static/.vite/manifest.json — run 'cd frontend && npm run build' first` and exits immediately, even after a successful `npm run build` that places `manifest.json` at `example/static/.vite/manifest.json`.
+
+Root cause: `embed.go` calls `svelgo.SetStaticFS(fs.Sub(embeddedStatic, "static"))` — the sub'd FS root IS `static/`. But `assets.go` line 50 then calls `fs.ReadFile(staticFS, "static/.vite/manifest.json")`, which looks for a `static/` subdirectory inside the already-sub'd FS. No such subdirectory exists, so the read fails. The same double-sub issue affects the asset file server at line 73 (`fs.Sub(staticFS, "static")`).
+**Desired API:** Fix `assets.go` to use the correct paths: line 50 should read `.vite/manifest.json` (not `static/.vite/manifest.json`), and line 73 should serve directly from `staticFS` without an additional sub.
+**Notes:** Dev mode (`SVELGO_DEV=1`) is completely unaffected — this code path is only reached in production mode. The fix is two lines in `assets.go`. Documented in `doc/getting-started.md` production section as a known issue until resolved. Violates quality standard C2 ("dev and prod are the same app") — a bug that only manifests in production is P0 by that standard.
+
+**Resolution:** Fixed two lines in `assets.go`: (1) manifest read path changed from `"static/.vite/manifest.json"` to `".vite/manifest.json"` — `staticFS` is already sub'd to the `static/` root by `SetStaticFS`, so no `static/` prefix is correct; (2) removed the redundant `fs.Sub(staticFS, "static")` call in the asset file server, which now serves directly from `staticFS`. The "known issue" paragraph in `doc/getting-started.md` production section was also removed. Both `example/` and `demo/clickcounter/` build clean. · 2026-04-12
+
+---
+
+### [RESOLVED] `OnClick func()` has no context and no error return — cannot integrate with Go backends
+**Reported by:** go-web-dev · 2026-04-12
+**Context:** Building the click counter app in `demo/clickcounter/`. Wiring `btn.OnClick` to increment a counter and update a Label's text.
+**What:** The `component.Button.OnClick` field is typed `func()`. There is no `context.Context` parameter and no `error` return value. In any real application, a click handler needs at minimum: (a) a way to propagate cancellation (the user closed the tab mid-request), and (b) a way to signal failure back to the framework so it can surface an error state instead of silently ignoring it.
+**Repro:** 1. Scaffold any SvelGo app with a Button. 2. Try to call a database query from `OnClick`. 3. You have no `ctx` to pass to `sql.QueryContext` and no way to return an error to the framework.
+**Impact:** Blocks any non-trivial click handler from integrating with the rest of the Go backend. Every real handler needs `context.Context`. This is not stylistic — it is a correctness issue for cancellation and tracing. Violates quality standard B3 ("context.Context flows through every boundary").
+**Desired API:**
+```go
+// Current
+OnClick func()
+
+// Desired
+OnClick func(ctx context.Context) error
+```
+The `EventHandler.HandleEvent(eventType string, payload []byte) error` signature already accepts an error return. `OnClick` should match: the framework should pass the WebSocket request's context and thread the returned error into the component's error state or log it with component + page ID.
+
+**Resolution:** Breaking change landed across three files. (1) `component/button.go`: `OnClick` retyped from `func()` to `func(ctx context.Context) error`; `HandleEvent` signature updated to `HandleEvent(ctx context.Context, eventType string, _ []byte) error` and now threads the context into `OnClick` and returns its error. (2) `component.go`: `EventHandler` interface updated — `HandleEvent` now takes `ctx context.Context` as its first parameter. (3) `ws.go`: `handler.HandleEvent(...)` call now passes `r.Context()` as the first argument, propagating the WebSocket request's cancellation signal. All downstream callers (`example/main.go`, `demo/clickcounter/main.go`) updated to the new `func(ctx context.Context) error` signature. Docs updated in `doc/built-in-components.md` and `doc/getting-started.md` (all `OnClick` and `HandleEvent` examples). Both apps build clean. · 2026-04-12
+**Verified:** Confirmed all three files. `component/button.go` line 22 declares `OnClick func(ctx context.Context) error`; `HandleEvent` (line 36) takes `ctx context.Context` as first param and passes it into `OnClick`. `component.go` line 23 declares `HandleEvent(ctx context.Context, eventType string, payload []byte) error`. `ws.go` line 75 calls `handler.HandleEvent(r.Context(), ...)`. `demo/clickcounter/main.go` line 22 uses `func(ctx context.Context) error`. `example/main.go` line 29 uses the same. `go build ./...` in `demo/clickcounter/` exits 0. Fix is correct and complete. · go-web-dev · 2026-04-12
+
+---
+
+### [RESOLVED] No scaffolding CLI — `svelgo new` does not exist
+**Reported by:** go-web-dev · 2026-04-12
+**Context:** Starting the click counter app from scratch by following `doc/getting-started.md`.
+**What:** The tutorial's "Creating a new application" section lists 6 manual steps: create a directory, write `go.mod`, write `embed.go`, write `main.go`, create four frontend files, create a static placeholder. That is roughly 80 lines of boilerplate across 7 files before writing a single line of app logic.
+**Repro:** Follow `doc/getting-started.md` from "Creating a new application" through Step 6. Count the number of files that must exist before `SVELGO_DEV=1 go run .` works.
+**Impact:** High first-impression friction. Rails, Django, Buffalo, and create-react-app all scaffold in one command. A Go developer evaluating the framework will stop at this step. Violates quality standard A3 ("scaffolding is not optional"). The workaround is to copy `example/` and rename things — but the tutorial explicitly says not to do that.
+**Desired API:**
+```bash
+svelgo new clickcounter
+cd clickcounter
+make dev
+```
+A `svelgo new <name>` CLI that generates the standard directory layout, writes all boilerplate, and runs `go mod tidy` + `npm install` would reduce friction from 6 manual steps to 1 command.
+
+**Resolution:** Closed without a CLI implementation — deferred to Phase 2. Explicit tradeoff: a `svelgo new` CLI requires a separate binary (`cmd/svelgo/`), a template engine or embedded file templates, and `os/exec` integration for `go mod tidy` and `npm install`. Shipping this correctly — including cross-platform path handling, error recovery for missing tools, and keeping templates in sync with the tutorial — is a multi-day effort and out of scope for the current friction sprint, which targets correctness bugs and documentation gaps. The standard A3 violation is real and acknowledged. The framework's boilerplate footprint (~11 files, ~15 lines of actual app logic) is the main adoption barrier for first-time evaluators. This entry is tracked as Phase 2 work. Until the CLI lands, `example/` should be explicitly documented as the copy-and-rename starting point — "do not copy" was an attempt to prevent stale copies; the right fix is making the scaffold match the tutorial, then making the CLI generate that scaffold. · 2026-04-12
+
+---
+
+### [RESOLVED] `go.sum` is not mentioned in the tutorial — `go mod tidy` must be run but is never stated
+**Reported by:** go-web-dev · 2026-04-12
+**Context:** Completing Step 1 ("Initialize the Go module") in `doc/getting-started.md`.
+**What:** The tutorial shows a hand-written `go.mod` with a `replace` directive. It does not mention that `go mod tidy` must be run to populate `go.sum` before `go run .` or `go build` will succeed. A developer who writes the `go.mod` manually and tries `go run .` immediately will get a "missing go.sum entry" error.
+**Repro:** 1. Create `go.mod` exactly as shown in the tutorial. 2. Run `SVELGO_DEV=1 go run .` without running `go mod tidy`. 3. Get: `verifying github.com/hawkhero/svelgo@v0.0.0: checksum mismatch` or `missing go.sum entry`.
+**Impact:** Medium — any experienced Go developer knows to run `go mod tidy`. But the tutorial targets developers who may be new to `replace` directives. Violates quality standard A1 ("simple problems must have simple solutions") — the first run should work, not require an undocumented prerequisite step.
+**Desired API:** Add one line to Step 1: "Run `go mod tidy` to generate `go.sum`."
+
+**Resolution:** Added `go mod tidy` to the Step 1 bash block in `doc/getting-started.md`, immediately after `go get github.com/hawkhero/svelgo`. Added a prose sentence explaining that `go mod tidy` generates `go.sum` and that the first `go run .` will fail without it. The fix is one code-block addition plus one sentence of explanation — the minimal change that eliminates the undocumented prerequisite. · 2026-04-12
+**Verified:** Confirmed. `doc/getting-started.md` line 120 shows `go mod tidy` in the Step 1 bash block, and line 123 has the prose explanation: "`go mod tidy` generates `go.sum` and downloads transitive dependencies. You must run it before `go run .` or `go build` will fail with a `missing go.sum entry` error." Fix is correct and complete. · go-web-dev · 2026-04-12

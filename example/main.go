@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -25,11 +26,12 @@ func main() {
 			Label: "Click me (0 clicks)",
 		}
 
-		btn.OnClick = func() {
+		btn.OnClick = func(ctx context.Context) error {
 			clickCount++
 			btn.Label = fmt.Sprintf("Click me (%d clicks)", clickCount)
 			lbl.Text = fmt.Sprintf("Count: %d", clickCount)
 			log.Printf("Button clicked — count: %d", clickCount)
+			return nil
 		}
 
 		page := svelgo.NewPage()

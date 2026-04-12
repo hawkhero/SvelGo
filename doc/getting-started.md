@@ -60,15 +60,19 @@ The framework ships two components that require no proto definition, no Svelte f
 
 | Component | Go type | Fields | Events |
 |---|---|---|---|
-| Button | `component.Button` | `ID`, `Label`, `Disabled`, `OnClick func()` | `click` |
+| Button | `component.Button` | `ID`, `Label`, `Disabled`, `OnClick func(ctx context.Context) error` | `click` |
 | Label | `component.Label` | `ID`, `Text` | none (display only) |
 
 ```go
-import "github.com/hawkhero/svelgo/component"
+import (
+    "context"
+    "github.com/hawkhero/svelgo/component"
+)
 
 btn := &component.Button{ID: "btn-1", Label: "Click me"}
-btn.OnClick = func() {
+btn.OnClick = func(ctx context.Context) error {
     btn.Label = "Clicked!"
+    return nil
 }
 
 lbl := &component.Label{ID: "lbl-1", Text: "Hello World"}
@@ -113,7 +117,10 @@ myapp/
 mkdir myapp && cd myapp
 go mod init myapp
 go get github.com/hawkhero/svelgo
+go mod tidy
 ```
+
+`go mod tidy` generates `go.sum` and downloads transitive dependencies. You must run it before `go run .` or `go build` will fail with a `missing go.sum entry` error.
 
 **go.mod** when developing against a local framework checkout:
 
@@ -165,6 +172,7 @@ func init() {
 package main
 
 import (
+    "context"
     "fmt"
     "log"
     "net/http"
@@ -182,10 +190,11 @@ func main() {
         btn := &component.Button{ID: "btn-1", Label: "Click me (0)"}
         lbl := &component.Label{ID: "lbl-1", Text: "Count: 0"}
 
-        btn.OnClick = func() {
+        btn.OnClick = func(ctx context.Context) error {
             clickCount++
             btn.Label = fmt.Sprintf("Click me (%d)", clickCount)
             lbl.Text = fmt.Sprintf("Count: %d", clickCount)
+            return nil
         }
 
         page := svelgo.NewPage()
@@ -361,6 +370,7 @@ Two sequential steps:
 
 The resulting binary is fully self-contained — no Node, no Vite, no separate static directory needed at runtime.
 
+
 ### Environment variables
 
 | Variable | Effect |
@@ -401,6 +411,172 @@ page.Render(w, r)
 `Add` accepts any value that implements the `svelgo.Component` interface (see `component.go`). The interface requires four methods: `ComponentID() string`, `ComponentType() string`, `Slot() string`, and `ProtoState() proto.Message`.
 
 Components that also want to receive user events must implement `svelgo.EventHandler`, which adds `HandleEvent(eventType string, payload []byte) error`.
+
+---
+
+## Adding a custom component
+
+When the built-in `Button` and `Label` are not enough, you can define your own component with custom state and events. Custom components follow a six-step workflow. The steps are sequential — each one depends on the previous.
+
+This section uses a hypothetical `Counter` component as the example: a stateful counter that the server owns, with an increment button rendered in the browser.
+
+### Step 1 — Define the proto message
+
+Create `proto/app.proto` in your app directory:
+
+```proto
+syntax = "proto3";
+package app;
+option go_package = "myapp/gen/app";
+
+message CounterState {
+  int32 count = 1;
+}
+```
+
+Then run the code generator:
+
+```bash
+# From your app root:
+mkdir -p gen/app
+protoc \
+  --go_out=gen \
+  --go_opt=paths=source_relative \
+  --proto_path=proto \
+  proto/app.proto
+mv gen/app.pb.go gen/app/app.pb.go
+```
+
+Also generate the JSON descriptor used by the TypeScript runtime:
+
+```bash
+cd frontend && ./node_modules/.bin/pbjs \
+  -t json \
+  ../proto/app.proto \
+  -o src/app_descriptor.json
+```
+
+> If you use the top-level `Makefile` pattern, add these commands to your app's `Makefile` as the `proto` target and run `make proto` once after creating `app.proto`. You only need to rerun it when the `.proto` file changes.
+
+### Step 2 — Write the Go struct
+
+In your app (e.g. `counter.go`), implement the `svelgo.Component` and `svelgo.EventHandler` interfaces:
+
+```go
+package main
+
+import (
+    "context"
+
+    apppb "myapp/gen/app"
+    "google.golang.org/protobuf/proto"
+)
+
+type Counter struct {
+    ID    string
+    Count int32
+}
+
+func (c *Counter) ComponentID()   string       { return c.ID }
+func (c *Counter) ComponentType() string       { return "app.Counter" }
+func (c *Counter) Slot()          string       { return "root" }
+
+func (c *Counter) ProtoState() proto.Message {
+    return &apppb.CounterState{Count: c.Count}
+}
+
+func (c *Counter) HandleEvent(ctx context.Context, eventType string, _ []byte) error {
+    if eventType == "increment" {
+        c.Count++
+    }
+    return nil
+}
+```
+
+The `ComponentType()` string must use your app's namespace — `app.Counter` here — so it cannot collide with the framework's built-in `svelgo.Button` / `svelgo.Label`.
+
+### Step 3 — Register the component in your route
+
+In your HTTP handler, add the component to the page the same way as a built-in:
+
+```go
+http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    counter := &Counter{ID: "my-counter", Count: 0}
+
+    page := svelgo.NewPage()
+    page.Add(counter)
+    page.Render(w, r)
+})
+```
+
+### Step 4 — Write the Svelte component
+
+Create `frontend/src/components/Counter.svelte`:
+
+```svelte
+<script lang="ts">
+  import type { Writable } from 'svelte/store'
+  import { getComponentStore } from 'svelgo/runtime/state'
+  import { sendEvent } from 'svelgo/runtime/ws'
+
+  let { id }: { id: string } = $props()
+
+  let state: Record<string, unknown> = $state({})
+  $effect(() => {
+    const store = getComponentStore(id) as Writable<Record<string, unknown>>
+    return store.subscribe(s => { state = s })
+  })
+</script>
+
+<div>
+  <p>Count: {state.count ?? 0}</p>
+  <button onclick={() => sendEvent(id, 'increment')}>Increment</button>
+</div>
+```
+
+Three things to notice:
+- `$props()` receives the `id` prop injected by `bootstrap()` at mount time.
+- `$effect` + `store.subscribe(getComponentStore(id))` is the correct Svelte 5 pattern — do not use the `$store` shorthand.
+- `sendEvent(id, 'increment')` sends a binary protobuf `ClientEvent` over the WebSocket. The string `'increment'` matches the `eventType` string checked in `HandleEvent`.
+- Proto field names are snake_case in `.proto` (`count`); protobufjs converts them to camelCase on the TypeScript side (`count` stays `count` here, but a field `click_count` would become `clickCount`).
+
+### Step 5 — Register the Svelte component
+
+Create `frontend/src/registry.ts`:
+
+```ts
+import { registerComponent } from 'svelgo/runtime/registry'
+import Counter from './components/Counter.svelte'
+
+registerComponent('app.Counter', Counter)
+```
+
+The string key `'app.Counter'` must exactly match your Go struct's `ComponentType()` return value.
+
+### Step 6 — Register the proto decoder
+
+Create `frontend/src/proto.ts`:
+
+```ts
+import { registerComponentDecoder } from 'svelgo/runtime/proto'
+import protobuf from 'protobufjs/light'
+import appDescriptor from './app_descriptor.json'
+
+const appRoot = protobuf.Root.fromJSON(appDescriptor as protobuf.INamespace)
+registerComponentDecoder('app.Counter', appRoot.lookupType('app.CounterState'))
+```
+
+Then update `frontend/src/main.ts` to import both files before calling `bootstrap()`:
+
+```ts
+import './proto'
+import './registry'
+import { bootstrap } from 'svelgo/runtime/client'
+
+bootstrap()
+```
+
+> **Only add these imports once `proto.ts` and `registry.ts` actually exist.** A `main.ts` that imports absent modules will fail to build. For built-in-only apps, `main.ts` contains only the `bootstrap()` import — no `proto` or `registry` imports.
 
 ---
 

@@ -46,10 +46,12 @@ func Setup() {
 		resolvedCSS = ""
 		log.Println("SvelGo: dev mode — Vite dev server expected at :5173")
 	} else {
-		// Parse the Vite manifest to find the hashed bundle filenames
-		manifestData, err := fs.ReadFile(staticFS, "static/.vite/manifest.json")
+		// Parse the Vite manifest to find the hashed bundle filenames.
+		// staticFS is already sub'd to the static/ root by SetStaticFS, so
+		// the manifest lives at ".vite/manifest.json", not "static/.vite/...".
+		manifestData, err := fs.ReadFile(staticFS, ".vite/manifest.json")
 		if err != nil {
-			log.Fatal("SvelGo: could not read static/.vite/manifest.json — run `cd frontend && npm run build` first")
+			log.Fatal("SvelGo: could not read .vite/manifest.json — run `cd frontend && npm run build` first")
 		}
 		var manifest map[string]viteManifestEntry
 		if err := json.Unmarshal(manifestData, &manifest); err != nil {
@@ -69,12 +71,9 @@ func Setup() {
 		}
 		log.Printf("SvelGo: serving embedded assets (script: %s)", resolvedScript)
 
-		// Serve embedded static assets
-		staticRoot, err := fs.Sub(staticFS, "static")
-		if err != nil {
-			log.Fatal("SvelGo: could not sub static/ from embedded FS:", err)
-		}
-		http.Handle("/assets/", http.FileServer(http.FS(staticRoot)))
+		// Serve embedded static assets directly from staticFS (already sub'd to
+		// the static/ root — no additional Sub call needed here).
+		http.Handle("/assets/", http.FileServer(http.FS(staticFS)))
 	}
 
 	// WebSocket handler
