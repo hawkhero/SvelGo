@@ -86,7 +86,38 @@ See `doc/built-in-components.md` for full reference and wiring examples.
 
 ## Creating a new application
 
-Scaffold from scratch — do not copy `example/`. The following steps build the minimal app directory structure:
+### Using the scaffold CLI (recommended)
+
+The framework ships a `svelgo new <appname>` CLI that generates all boilerplate, runs `go mod tidy`, and runs `npm install` in one command.
+
+**From inside the framework repo** (run once to install the binary):
+
+```bash
+go install github.com/hawkhero/svelgo/cmd/svelgo@latest
+```
+
+Or run it directly without installing:
+
+```bash
+go run ./cmd/svelgo new myapp
+```
+
+Then:
+
+```bash
+cd myapp
+make dev
+```
+
+Visit `http://localhost:8080` — the app is running.
+
+> **Path assumption:** the CLI generates a `go.mod` replace directive of `../../` and an npm `svelgo` path of `../../../frontend`. This is correct when you run the command from a directory one level below the framework repo root (e.g. from `<repo>/demo/`). If your layout differs, update those two paths after scaffolding. The CLI's output message names both files.
+
+---
+
+### Manual scaffold (reference)
+
+If you prefer to set up by hand — or want to understand what the CLI generates — the following steps build the same directory structure. You do not need to follow these steps if you used `svelgo new`.
 
 ```
 myapp/

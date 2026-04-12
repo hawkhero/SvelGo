@@ -2,3 +2,9 @@ frontend/node_modules
 example/frontend/node_modules
 example/dist
 demo
+
+# build artifacts
+/svelgo
+example/buttonapp
+example/static/assets/
+example/static/.vite/
