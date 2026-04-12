@@ -95,7 +95,7 @@ myapp/
 │   └── .gitkeep     ← lets go:embed compile before the first npm run build
 └── frontend/
     ├── package.json
-    ├── svelte.config.ts     ← minimal Svelte config (prevents vite-plugin-svelte warning)
+    ├── svelte.config.js     ← minimal Svelte config (prevents vite-plugin-svelte warning)
     ├── vite.config.ts
     ├── index.html
     └── src/
@@ -231,9 +231,9 @@ func main() {
 cd frontend && npm install
 ```
 
-**frontend/svelte.config.ts:**
+**frontend/svelte.config.js:**
 
-```ts
+```js
 export default {}
 ```
 

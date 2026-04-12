@@ -50,6 +50,7 @@ Expected output:
 - The mandatory baseline app at `demo/clickcounter/` + 0–2 optional apps under `demo/`, all working (or explicit reports of what failed and why)
 - Zero-to-many new entries appended to `FRICTION.md` under **Open**
 - A short summary of which apps were built and what felt wrong
+- **Quality standards audit:** after completing the app(s), read `doc/quality-standards.md` end-to-end and produce a per-standard evaluation (PASS / FAIL / N/A with a one-line rationale for each). Every FAIL must have a corresponding `[OPEN]` entry in `FRICTION.md` that cites the standard by name. Write the audit to `demo/clickcounter/quality-audit.md`.
 
 ### Step 2 — Triage & fix
 Invoke `svelgo-dev` with: *"Read `FRICTION.md`. For every Open entry, either resolve it in the framework/doc or close it with a written justification. Update `FRICTION.md` in place — mark each handled entry `[RESOLVED]` with a resolution note. Verify the existing example apps still build and run after your changes. **Justifications are not a lazy escape hatch** — if you close an entry without a code/doc change, the resolution note must name a specific tradeoff (API stability, scope boundary, intentional design choice, deferred to Phase 2+) and explain *why* the friction is acceptable. 'Works as intended' alone is not a valid justification."* Expected output:
@@ -68,7 +69,7 @@ Invoke `go-web-dev` again with: *"Re-run the Phase 1 task on the updated framewo
 
 **Hard iteration cap: 3 full rounds of Steps 1→2→3.** If FRICTION.md still has Open entries after round 3, the loop stops anyway and the remaining entries are reclassified as Phase 2 backlog. A loop that cannot converge in 3 rounds on a task this trivial is itself a signal — about the framework, the docs, or the loop mechanism — and that signal is more valuable than grinding through a fourth round.
 
-**Phase 1 exits successfully when:** the mandatory baseline app runs end-to-end with Button + Label cross-wired, *and* `FRICTION.md` has no remaining Open entries after at least one full loop pass (or, alternatively, the 3-round cap is reached with remaining entries explicitly deferred).
+**Phase 1 exits successfully when:** the mandatory baseline app runs end-to-end with Button + Label cross-wired, *and* `FRICTION.md` has no remaining Open entries after at least one full loop pass (or, alternatively, the 3-round cap is reached with remaining entries explicitly deferred), *and* `go-web-dev`'s quality standards audit exists with every FAIL item resolved or explicitly deferred in `FRICTION.md`.
 
 ## What Phase 1 intentionally does NOT include
 
@@ -101,8 +102,9 @@ Phase 1 is verified by the human, not by automated tests:
 1. Confirm `doc/` contains a tutorial that a Go developer can actually follow — skim it as a human sanity check.
 2. Run `make dev`, open each small app go-web-dev built, and confirm it behaves as the tutorial claims.
 3. Open `FRICTION.md` and confirm **zero `[OPEN]` entries remain** — every entry raised during the loop has been resolved (framework fix, doc update, or written justification) and confirmed by go-web-dev in Step 3.
-4. Run `make build` once at the end to confirm the production path still compiles (sanity check, not the focus).
-5. If any step in the loop required the human to manually rescue an agent (re-explain the task, fix something the agent couldn't), that is itself a loop defect. Since `FRICTION.md`'s entry format is framework-pain-oriented and doesn't fit loop-mechanism defects cleanly, record meta-friction informally at the top of `FRICTION.md` under a `## Meta` heading (or in session notes) and address it before starting Phase 2.
+4. Open `demo/clickcounter/quality-audit.md` and confirm every standard in `doc/quality-standards.md` has been evaluated. Every FAIL must have a corresponding resolved (or deferred) entry in `FRICTION.md`.
+5. Run `make build` once at the end to confirm the production path still compiles (sanity check, not the focus).
+6. If any step in the loop required the human to manually rescue an agent (re-explain the task, fix something the agent couldn't), that is itself a loop defect. Since `FRICTION.md`'s entry format is framework-pain-oriented and doesn't fit loop-mechanism defects cleanly, record meta-friction informally at the top of `FRICTION.md` under a `## Meta` heading (or in session notes) and address it before starting Phase 2.
 
 ## Out of scope / open for later phases
 
