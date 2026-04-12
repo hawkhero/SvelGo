@@ -17,30 +17,32 @@ This guide assumes you know Go well and have a passing familiarity with TypeScri
 
 ---
 
-## Repository layout
+## What a SvelGo app looks like
 
-The repository contains two separate Go modules:
+A SvelGo app is a standalone Go module — it does not live inside the framework repository. The typical layout:
 
 ```
-svelgo/                          ← module github.com/hawkhero/svelgo (the framework)
-├── *.go                         ← package svelgo — the entire Go API surface
-├── component/                   ← built-in components (Button, Label)
-├── proto/ui.proto               ← framework wire types (4 core messages + built-in states)
-├── gen/ui/ui.pb.go              ← auto-generated; never edit by hand
-└── frontend/src/runtime/       ← TypeScript runtime (client.ts, ws.ts, state.ts, …)
-
-example/                         ← module example/buttonapp (a self-contained app)
-├── go.mod                       ← requires github.com/hawkhero/svelgo
-├── main.go                      ← HTTP server + route handlers
-├── embed.go                     ← //go:embed all:static + svelgo.SetStaticFS()
-└── frontend/                    ← Vite + Svelte app (imports the svelgo npm package)
+myapp/
+├── go.mod          ← module myapp; require github.com/hawkhero/svelgo v0.1.0
+├── go.sum
+├── main.go         ← HTTP server + route handlers
+├── embed.go        ← //go:embed all:static + svelgo.SetStaticFS()
+├── Makefile
+├── static/
+│   └── .gitkeep    ← lets go:embed compile before the first npm run build
+└── frontend/       ← Vite + Svelte app (imports @svelgo/core)
+    ├── package.json
+    ├── vite.config.ts
+    ├── svelte.config.js
+    ├── index.html
     └── src/
-        ├── main.ts              ← calls bootstrap() — this is the entire entry point
-        ├── proto.ts             ← only needed if you add custom components
-        └── registry.ts          ← only needed if you add custom components
+        ├── main.ts          ← calls bootstrap() — entire entry point for built-in-only apps
+        ├── proto.ts         ← only needed for custom components
+        ├── registry.ts      ← only needed for custom components
+        └── components/      ← only needed for custom components
 ```
 
-**The framework is never modified for a new application.** Everything app-specific lives in the app module (the `example/` directory here).
+**The framework is never modified for a new application.** The Go package (`github.com/hawkhero/svelgo`) and npm package (`@svelgo/core`) are consumed as ordinary dependencies.
 
 ---
 
@@ -78,23 +80,18 @@ See `doc/built-in-components.md` for full reference and wiring examples.
 
 ### Using the scaffold CLI (recommended)
 
-The framework ships a `svelgo new <appname>` CLI that generates all boilerplate, runs `go mod tidy`, and runs `npm install` in one command.
+The framework ships a `svelgo` CLI that generates all boilerplate, runs `go mod tidy`, and runs `npm install` in one command.
 
-**From inside the framework repo** (run once to install the binary):
+Install once (works from any directory):
 
 ```bash
 go install github.com/hawkhero/svelgo/cmd/svelgo@latest
 ```
 
-Or run it directly without installing:
+Then scaffold and run:
 
 ```bash
-go run ./cmd/svelgo new myapp
-```
-
-Then:
-
-```bash
+svelgo new myapp
 cd myapp
 make dev
 ```
@@ -345,14 +342,6 @@ This empty file lets `//go:embed all:static` compile before the first `npm run b
 
 ## Dev mode vs. production mode
 
-> **Important — run this once after a fresh checkout, before `make dev`:**
->
-> ```bash
-> make proto
-> ```
->
-> The repository ships with a pre-generated `gen/ui/ui.pb.go`, but it may be stale or built against a different `protoc-gen-go` version. Running `make proto` regenerates it from `proto/ui.proto` using your local toolchain. If you skip this step, the Go server will panic at startup with a `slice bounds out of range` error inside the protobuf initializer. You only need to rerun `make proto` if you edit `proto/ui.proto`.
-
 ### Development (`make dev`)
 
 ```bash
@@ -422,7 +411,7 @@ page.Render(w, r)
 
 `Add` accepts any value that implements the `svelgo.Component` interface (see `component.go`). The interface requires four methods: `ComponentID() string`, `ComponentType() string`, `Slot() string`, and `ProtoState() proto.Message`.
 
-Components that also want to receive user events must implement `svelgo.EventHandler`, which adds `HandleEvent(eventType string, payload []byte) error`.
+Components that also want to receive user events must implement `svelgo.EventHandler`, which adds `HandleEvent(ctx context.Context, eventType string, payload []byte) error`. The context carries the underlying HTTP request's context, so you can use it for deadlines, cancellation, and passing request-scoped values into database or RPC calls.
 
 ---
 
