@@ -34,11 +34,9 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "usage: svelgo new <appname>")
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "Creates a new SvelGo application in ./<appname>/.")
-	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "Assumption: this command is run from inside a directory one level")
-	fmt.Fprintln(os.Stderr, "below the framework repo root (e.g. from <repo>/demo/). The generated")
-	fmt.Fprintln(os.Stderr, "go.mod replace directive and npm svelgo path assume two levels of")
-	fmt.Fprintln(os.Stderr, "nesting above the app directory (../../ to reach the framework root).")
+	fmt.Fprintln(os.Stderr, "The generated app depends on the published packages:")
+	fmt.Fprintln(os.Stderr, "  Go:  github.com/hawkhero/svelgo")
+	fmt.Fprintln(os.Stderr, "  npm: @svelgo/core")
 }
 
 type scaffoldData struct {
@@ -105,13 +103,7 @@ Done! Your new SvelGo app is ready.
   make dev
 
 Visit http://localhost:8080 once both processes are running.
-
-Note: the go.mod replace directive points to ../../ (two levels up). This
-assumes your app sits one level below the framework repo root
-(e.g. <repo>/demo/%s/). If your nesting depth differs, update the
-replace directive in %s/go.mod and the svelgo path in
-%s/frontend/package.json accordingly.
-`, appName, appName, appName, appName)
+`, appName)
 
 	return nil
 }
@@ -153,12 +145,7 @@ const goModTmpl = `module {{.AppName}}
 
 go 1.26
 
-// Remove this line when the framework is published to a module proxy.
-// This path assumes the app sits one level below the framework repo root
-// (e.g. <framework-repo>/demo/{{.AppName}}/). Adjust if your layout differs.
-replace github.com/hawkhero/svelgo => ../../
-
-require github.com/hawkhero/svelgo v0.0.0
+require github.com/hawkhero/svelgo v0.1.0
 `
 
 const embedGoTmpl = `package main
@@ -235,8 +222,6 @@ clean:
 	rm -rf dist/ static/assets static/.vite
 `
 
-// packageJSONTmpl uses the ../../../frontend path because the app lives two
-// levels below the framework root (e.g. <repo>/demo/<appname>/frontend/).
 const packageJSONTmpl = `{
   "name": "{{.AppName}}-frontend",
   "version": "0.1.0",
@@ -251,7 +236,7 @@ const packageJSONTmpl = `{
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
     "vite": "^6.3.0",
-    "svelgo": "file:../../../frontend"
+    "@svelgo/core": "^0.1.0"
   },
   "dependencies": {
     "protobufjs": "^7.4.0"
@@ -300,7 +285,7 @@ const indexHTMLTmpl = `<!DOCTYPE html>
 </html>
 `
 
-const mainTSTmpl = `import { bootstrap } from 'svelgo/runtime/client'
+const mainTSTmpl = `import { bootstrap } from '@svelgo/core/runtime/client'
 
 bootstrap()
 `

@@ -12,7 +12,7 @@
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
     "vite": "^6.3.0",
-    "svelgo": "file:../../frontend"
+    "@svelgo/core": "file:../../frontend"
   },
   "dependencies": {
     "protobufjs": "^7.4.0"

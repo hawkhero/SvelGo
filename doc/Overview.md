@@ -237,8 +237,8 @@ http.HandleFunc("/counter", func(w http.ResponseWriter, r *http.Request) {
 ```svelte
 <script lang="ts">
   import type { Writable } from 'svelte/store'
-  import { getComponentStore } from 'svelgo/runtime/state'
-  import { sendEvent } from 'svelgo/runtime/ws'
+  import { getComponentStore } from '@svelgo/core/runtime/state'
+  import { sendEvent } from '@svelgo/core/runtime/ws'
 
   let { id }: { id: string } = $props()
 
@@ -258,7 +258,7 @@ http.HandleFunc("/counter", func(w http.ResponseWriter, r *http.Request) {
 ### 5. Register it in `example/frontend/src/registry.ts`
 
 ```ts
-import { registerComponent } from 'svelgo/runtime/registry'
+import { registerComponent } from '@svelgo/core/runtime/registry'
 import Counter from './components/Counter.svelte'
 
 registerComponent('Counter', Counter)
@@ -267,7 +267,7 @@ registerComponent('Counter', Counter)
 ### 6. Register the state decoder in `example/frontend/src/proto.ts`
 
 ```ts
-import { registerComponentDecoder } from 'svelgo/runtime/proto'
+import { registerComponentDecoder } from '@svelgo/core/runtime/proto'
 
 registerComponentDecoder('Counter', appRoot.lookupType('app.CounterState'))
 ```
@@ -360,11 +360,11 @@ The framework runtime does not know about any specific component types at compil
 
 ```ts
 // example/frontend/src/registry.ts
-import { registerComponent } from 'svelgo/runtime/registry'
+import { registerComponent } from '@svelgo/core/runtime/registry'
 registerComponent('Button', Button)   // maps type string → Svelte constructor
 
 // example/frontend/src/proto.ts
-import { registerComponentDecoder } from 'svelgo/runtime/proto'
+import { registerComponentDecoder } from '@svelgo/core/runtime/proto'
 registerComponentDecoder('Button', appRoot.lookupType('app.ButtonState'))  // maps type string → protobuf decoder
 ```
 

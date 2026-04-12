@@ -9,14 +9,14 @@ svelgo/                          ← Go module: github.com/hawkhero/svelgo (the 
 ├── *.go                         ← Framework package (package svelgo)
 ├── proto/ui.proto               ← Framework wire types only (4 core messages)
 ├── gen/ui/ui.pb.go              ← Auto-generated; do not edit
-├── frontend/                    ← npm package "svelgo" (TypeScript runtime)
+├── frontend/                    ← npm package "@svelgo/core" (TypeScript runtime)
 │   └── src/runtime/             ← client.ts, ws.ts, state.ts, proto.ts, registry.ts
 └── example/                     ← Self-contained example app (separate go.mod)
-    ├── go.mod                   ← replace github.com/hawkhero/svelgo => ../
+    ├── go.mod                   ← requires github.com/hawkhero/svelgo (local replace for dev)
     ├── main.go, embed.go        ← App entry point + embed directive
     ├── proto/app.proto          ← App-specific messages (ButtonState)
     ├── gen/app/app.pb.go        ← Auto-generated; do not edit
-    └── frontend/                ← App frontend (imports "svelgo" npm package)
+    └── frontend/                ← App frontend (imports "@svelgo/core" npm package)
         └── src/
             ├── main.ts          ← Imports ./proto, ./registry, then bootstrap()
             ├── proto.ts         ← Registers component decoders
@@ -127,4 +127,4 @@ func init() {
 - In Svelte 5 components, use `$effect` + `store.subscribe(...)` — not `$store` shorthand
 - `ws.binaryType = 'arraybuffer'` must be set before messages arrive (done in `ws.ts`)
 - `svelgo.Setup()` must be called before registering application routes
-- The `example/go.mod` uses `replace github.com/hawkhero/svelgo => ../` for local development; remove it when the framework is published
+- The `example/go.mod` uses `replace github.com/hawkhero/svelgo => ../` for local framework development; new apps should use the published module (`v0.1.0`) without a replace directive

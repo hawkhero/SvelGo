@@ -30,7 +30,7 @@ svelgo/                          ← module github.com/hawkhero/svelgo (the fram
 └── frontend/src/runtime/       ← TypeScript runtime (client.ts, ws.ts, state.ts, …)
 
 example/                         ← module example/buttonapp (a self-contained app)
-├── go.mod                       ← has: replace github.com/hawkhero/svelgo => ../
+├── go.mod                       ← requires github.com/hawkhero/svelgo
 ├── main.go                      ← HTTP server + route handlers
 ├── embed.go                     ← //go:embed all:static + svelgo.SetStaticFS()
 └── frontend/                    ← Vite + Svelte app (imports the svelgo npm package)
@@ -41,16 +41,6 @@ example/                         ← module example/buttonapp (a self-contained 
 ```
 
 **The framework is never modified for a new application.** Everything app-specific lives in the app module (the `example/` directory here).
-
-### The replace directive
-
-When developing against a local framework checkout, add this to your app's `go.mod`:
-
-```
-replace github.com/hawkhero/svelgo => /path/to/svelgo
-```
-
-Remove this line (and change the `require` to a real version tag) when you publish the framework or vendor it.
 
 ---
 
@@ -111,8 +101,6 @@ make dev
 
 Visit `http://localhost:8080` — the app is running.
 
-> **Path assumption:** the CLI generates a `go.mod` replace directive of `../../` and an npm `svelgo` path of `../../../frontend`. This is correct when you run the command from a directory one level below the framework repo root (e.g. from `<repo>/demo/`). If your layout differs, update those two paths after scaffolding. The CLI's output message names both files.
-
 ---
 
 ### Manual scaffold (reference)
@@ -153,19 +141,14 @@ go mod tidy
 
 `go mod tidy` generates `go.sum` and downloads transitive dependencies. You must run it before `go run .` or `go build` will fail with a `missing go.sum entry` error.
 
-**go.mod** when developing against a local framework checkout:
+**go.mod:**
 
 ```
 module myapp
 
 go 1.26
 
-require (
-    github.com/hawkhero/svelgo v0.0.0
-)
-
-// Remove this line when the framework is published
-replace github.com/hawkhero/svelgo => /path/to/svelgo
+require github.com/hawkhero/svelgo v0.1.0
 ```
 
 ### Step 2 — Write the Go files
@@ -257,15 +240,13 @@ func main() {
     "svelte": "^5.0.0",
     "typescript": "^5.0.0",
     "vite": "^6.3.0",
-    "svelgo": "file:../../frontend"
+    "@svelgo/core": "^0.1.0"
   },
   "dependencies": {
     "protobufjs": "^7.4.0"
   }
 }
 ```
-
-> **Path convention for the `svelgo` local dependency:** the path is relative from your app's `frontend/` directory to the framework's `frontend/` directory. The standard layout places your app one level under the framework root (e.g. `svelgo/myapp/`), making the correct path `../../frontend` — two levels up to reach the framework root, then into `frontend/`. If your app is nested deeper (e.g. `svelgo/demo/clickcounter/`), add one extra `../` per additional level: `../../../frontend`. `example/frontend/package.json` uses `../../frontend` as the reference implementation. When the framework is published to npm, replace the `file:` path with the published package name.
 
 ```bash
 cd frontend && npm install
@@ -328,7 +309,7 @@ export default defineConfig({
 **frontend/src/main.ts** — when using only built-in components, this is the entire entry point:
 
 ```ts
-import { bootstrap } from 'svelgo/runtime/client'
+import { bootstrap } from '@svelgo/core/runtime/client'
 
 bootstrap()
 ```
@@ -547,8 +528,8 @@ Create `frontend/src/components/Counter.svelte`:
 ```svelte
 <script lang="ts">
   import type { Writable } from 'svelte/store'
-  import { getComponentStore } from 'svelgo/runtime/state'
-  import { sendEvent } from 'svelgo/runtime/ws'
+  import { getComponentStore } from '@svelgo/core/runtime/state'
+  import { sendEvent } from '@svelgo/core/runtime/ws'
 
   let { id }: { id: string } = $props()
 
@@ -576,7 +557,7 @@ Three things to notice:
 Create `frontend/src/registry.ts`:
 
 ```ts
-import { registerComponent } from 'svelgo/runtime/registry'
+import { registerComponent } from '@svelgo/core/runtime/registry'
 import Counter from './components/Counter.svelte'
 
 registerComponent('app.Counter', Counter)
@@ -589,7 +570,7 @@ The string key `'app.Counter'` must exactly match your Go struct's `ComponentTyp
 Create `frontend/src/proto.ts`:
 
 ```ts
-import { registerComponentDecoder } from 'svelgo/runtime/proto'
+import { registerComponentDecoder } from '@svelgo/core/runtime/proto'
 import protobuf from 'protobufjs/light'
 import appDescriptor from './app_descriptor.json'
 
@@ -602,7 +583,7 @@ Then update `frontend/src/main.ts` to import both files before calling `bootstra
 ```ts
 import './proto'
 import './registry'
-import { bootstrap } from 'svelgo/runtime/client'
+import { bootstrap } from '@svelgo/core/runtime/client'
 
 bootstrap()
 ```

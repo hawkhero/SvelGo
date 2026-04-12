@@ -18,7 +18,7 @@ registerComponentDecoder('svelgo.Label', root.lookupType('ui.LabelState'))
 This happens before any app code runs. For a built-in-only app, `registry.ts` and `proto.ts` do **not** need to exist at all — and `main.ts` should **not** import them. The minimal `main.ts` is:
 
 ```ts
-import { bootstrap } from 'svelgo/runtime/client'
+import { bootstrap } from '@svelgo/core/runtime/client'
 
 bootstrap()
 ```
